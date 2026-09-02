@@ -69,7 +69,31 @@ bin/create-admin.php      admin user CLI
 | PATCH | `/api/admin/businesses/{id}` `{"verification_status":"approved"\|"rejected"}` | `requireRole(['admin'])` |
 | GET | `/api/admin/businesses/{id}/docs/{docId}` | `requireRole(['admin'])` — streams a verification document |
 
-Verification documents are stored via `App\Storage\StorageInterface` (`LocalStorage` → `storage/uploads/`, outside the web root; override with `STORAGE_PATH`). They are never URL-addressable; admins fetch them through the authenticated route above. Experience creation (Step 3) must check `verification_status = 'approved'` in the query.
+Verification documents are stored via `App\Storage\StorageInterface` (`LocalStorage` → `storage/uploads/`, outside the web root; override with `STORAGE_PATH`). They are never URL-addressable; admins fetch them through the authenticated route above.
+
+## Routes (Step 3 — experiences, availability, admin approval)
+
+Reference data (`destinations`: Da Nang, Hoi An; 7 `categories`) is seeded by migration `0004`.
+
+| Method | Route | Auth |
+|---|---|---|
+| GET | `/api/destinations`, `/api/categories` | public |
+| GET | `/api/partner/experiences` | `business` — own experiences only |
+| POST | `/api/partner/experiences` | `business` with `verification_status='approved'` → saved as `pending_review` |
+| GET | `/api/partner/experiences/{id}` | `business` (owner) |
+| PATCH | `/api/partner/experiences/{id}` | `business` (owner) — partial update; a `published` listing goes back to `pending_review`; `suspended` → 409 |
+| POST | `/api/partner/experiences/{id}/submit` | `business` (owner) — `draft` → `pending_review` |
+| GET | `/api/partner/experiences/{id}/availability?from=&to=` | `business` (owner) — defaults to next 90 days |
+| PUT | `/api/partner/experiences/{id}/availability` `{"dates":[{"date":"YYYY-MM-DD","slots_total":n}]}` | `business` (owner) — upsert in a transaction; rejects past dates and `slots_total < slots_booked` |
+| POST | `/api/partner/experiences/{id}/images` (multipart `image`) | `business` (owner) — JPEG/PNG/WebP ≤5 MB, max 10, MIME sniffed with `finfo` |
+| DELETE | `/api/partner/experiences/{id}/images/{imageId}` | `business` (owner) |
+| GET | `/api/admin/experiences/pending` | `admin` — approval queue (oldest first) |
+| GET | `/api/admin/experiences?status=` | `admin` |
+| PATCH | `/api/admin/experiences/{id}/approve` `{"decision":"publish"\|"reject"\|"suspend"}` | `admin` — `reject` returns it to the operator as `draft` |
+
+Experience JSON body: `destination_id`, `category_id`, `title`, `description`, `duration_minutes`, `max_group_size`, `price_amount`, `price_currency` (USD/VND/EUR/GBP/AUD/INR), `languages[]`, `included_items[]`, `cancellation_policy`.
+
+Every partner query carries `business_id = ?` in its `WHERE` (resolved from the session user's `businesses.owner_user_id`), so an operator can never read or touch another operator's rows — they just get 404. Experience images are public: they are written to `public/uploads/experiences/{experienceId}/{imageId}.{ext}` and referenced as `/uploads/...` URLs. Verification documents stay in the private `storage/uploads/`.
 
 Errors are JSON: `{"error": "...", "errors": {field: msg}}` with 401/403/422/404/500 status codes.
 

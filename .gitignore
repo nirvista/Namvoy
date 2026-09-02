@@ -3,3 +3,5 @@
 /storage/uploads/*
 !/storage/uploads/.gitkeep
 .phpunit.result.cache
+/public/uploads/*
+!/public/uploads/.gitkeep
