@@ -38,7 +38,8 @@ src/Database.php          mysqli wrapper: queryPrepared(), fetchOne(), fetchAll(
 src/Auth.php              sessions, requireRole(), login/logout/register/attempt
 src/Csrf.php              token()/verify()/field()
 src/Middleware/           SessionMiddleware, CsrfMiddleware, JsonErrorMiddleware
-src/Controllers/          AuthController, HealthController
+src/Controllers/          AuthController, HealthController, PartnerController, AdminBusinessController
+src/Storage/              StorageInterface + LocalStorage (verification docs, outside web root)
 src/Exceptions/           HttpException (401/403/422 subclasses) -> JSON errors
 src/helpers.php           env(), queryPrepared(), uuid4(), e()
 database/migrations/      versioned .sql files, tracked in schema_migrations
