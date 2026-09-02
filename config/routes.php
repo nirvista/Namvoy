@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Controllers\AdminBusinessController;
+use App\Controllers\AdminExperienceController;
 use App\Controllers\AuthController;
 use App\Controllers\HealthController;
 use App\Controllers\PartnerController;
+use App\Controllers\PartnerExperienceController;
+use App\Controllers\ReferenceController;
 use App\Middleware\CsrfMiddleware;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
@@ -28,17 +31,33 @@ return static function (App $app): void {
         $group->post('/api/auth/logout', [AuthController::class, 'logout']);
         $group->get('/api/auth/me', [AuthController::class, 'me']);
 
+        // Public reference data
+        $group->get('/api/destinations', [ReferenceController::class, 'destinations']);
+        $group->get('/api/categories', [ReferenceController::class, 'categories']);
+
         // Partner (business operators)
         $group->post('/api/partner/onboarding', [PartnerController::class, 'onboarding']);
         $group->get('/api/partner/me', [PartnerController::class, 'me']);
+        $group->get('/api/partner/experiences', [PartnerExperienceController::class, 'index']);
+        $group->post('/api/partner/experiences', [PartnerExperienceController::class, 'create']);
+        $group->get('/api/partner/experiences/{id}', [PartnerExperienceController::class, 'show']);
+        $group->patch('/api/partner/experiences/{id}', [PartnerExperienceController::class, 'update']);
+        $group->post('/api/partner/experiences/{id}/submit', [PartnerExperienceController::class, 'submit']);
+        $group->get('/api/partner/experiences/{id}/availability', [PartnerExperienceController::class, 'availability']);
+        $group->put('/api/partner/experiences/{id}/availability', [PartnerExperienceController::class, 'setAvailability']);
+        $group->post('/api/partner/experiences/{id}/images', [PartnerExperienceController::class, 'addImage']);
+        $group->delete('/api/partner/experiences/{id}/images/{imageId}', [PartnerExperienceController::class, 'removeImage']);
 
         // Admin
         $group->get('/api/admin/businesses', [AdminBusinessController::class, 'index']);
         $group->get('/api/admin/businesses/{id}', [AdminBusinessController::class, 'show']);
         $group->patch('/api/admin/businesses/{id}', [AdminBusinessController::class, 'review']);
         $group->get('/api/admin/businesses/{id}/docs/{docId}', [AdminBusinessController::class, 'document']);
+        $group->get('/api/admin/experiences', [AdminExperienceController::class, 'index']);
+        $group->get('/api/admin/experiences/pending', [AdminExperienceController::class, 'pending']);
+        $group->patch('/api/admin/experiences/{id}/approve', [AdminExperienceController::class, 'approve']);
 
-        // Step 3+: experiences CRUD, catalog, bookings, ...
+        // Step 4+: public catalog, bookings, ...
     })->add(new CsrfMiddleware());
 
     // Step 5: PSP webhooks - signature verified, no CSRF.
