@@ -57,6 +57,19 @@ bin/create-admin.php      admin user CLI
 | POST | `/api/auth/logout` | public |
 | GET | `/api/auth/me` | `requireRole(['traveler','business','admin'])` |
 
+## Routes (Step 2 — partner onboarding + admin approval)
+
+| Method | Route | Auth |
+|---|---|---|
+| POST | `/api/partner/onboarding` | public → creates `business` user + `pending` business (multipart: `email`, `password`, `full_name`, `business_name`, `contact_email`, `contact_phone`, `location` ∈ `da_nang\|hoi_an`, `verification_docs[]` 1–5 PDF/JPEG/PNG ≤5 MB) |
+| GET | `/api/partner/me` | `requireRole(['business'])` — own business profile |
+| GET | `/api/admin/businesses?status=pending` | `requireRole(['admin'])` — approval queue |
+| GET | `/api/admin/businesses/{id}` | `requireRole(['admin'])` |
+| PATCH | `/api/admin/businesses/{id}` `{"verification_status":"approved"\|"rejected"}` | `requireRole(['admin'])` |
+| GET | `/api/admin/businesses/{id}/docs/{docId}` | `requireRole(['admin'])` — streams a verification document |
+
+Verification documents are stored via `App\Storage\StorageInterface` (`LocalStorage` → `storage/uploads/`, outside the web root; override with `STORAGE_PATH`). They are never URL-addressable; admins fetch them through the authenticated route above. Experience creation (Step 3) must check `verification_status = 'approved'` in the query.
+
 Errors are JSON: `{"error": "...", "errors": {field: msg}}` with 401/403/422/404/500 status codes.
 
 ## Adding a migration
