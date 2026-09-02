@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Controllers\AdminBusinessController;
 use App\Controllers\AuthController;
 use App\Controllers\HealthController;
+use App\Controllers\PartnerController;
 use App\Middleware\CsrfMiddleware;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
@@ -26,7 +28,17 @@ return static function (App $app): void {
         $group->post('/api/auth/logout', [AuthController::class, 'logout']);
         $group->get('/api/auth/me', [AuthController::class, 'me']);
 
-        // Step 2+: partner onboarding, admin queues, catalog, bookings, ...
+        // Partner (business operators)
+        $group->post('/api/partner/onboarding', [PartnerController::class, 'onboarding']);
+        $group->get('/api/partner/me', [PartnerController::class, 'me']);
+
+        // Admin
+        $group->get('/api/admin/businesses', [AdminBusinessController::class, 'index']);
+        $group->get('/api/admin/businesses/{id}', [AdminBusinessController::class, 'show']);
+        $group->patch('/api/admin/businesses/{id}', [AdminBusinessController::class, 'review']);
+        $group->get('/api/admin/businesses/{id}/docs/{docId}', [AdminBusinessController::class, 'document']);
+
+        // Step 3+: experiences CRUD, catalog, bookings, ...
     })->add(new CsrfMiddleware());
 
     // Step 5: PSP webhooks - signature verified, no CSRF.
